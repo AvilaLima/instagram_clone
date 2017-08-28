@@ -13,6 +13,17 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
 app.use(multiparty());
 
+app.use(function(req,res,next)
+{
+    res.setHeader("Access-Control-Allow-Origin","http://localhost:4000");
+    res.setHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE");
+    res.setHeader("Access-Control-Allow-Headers","content-type");
+    res.setHeader("Access-Control-Allow-Credentials",true);
+
+
+    next();
+});
+
 var port = 3000;
 
 app.listen(port);
@@ -33,7 +44,6 @@ app.get('/',function(req,res)
 
 app.post('/api',function(req,res)
 {
-    res.setHeader("Access-Control-Allow-Origin","http://localhost:4000");
 
     var date = new Date();
     timeStamp = date.getTime();
@@ -76,7 +86,6 @@ app.post('/api',function(req,res)
 
 app.get('/imagens/:imagem',function(req,res)
 {
-    res.setHeader("Access-Control-Allow-Origin","http://localhost:4000");
     var img = req.params.imagem;
     fs.readFile('./uploads/' + img, function(error, conteudo)
     {
@@ -94,7 +103,6 @@ app.get('/imagens/:imagem',function(req,res)
 app.get('/api',function(req,res)
 {
     var dados = req.body;
-    res.setHeader("Access-Control-Allow-Origin","http://localhost:4000");
 
     db.open(function(err, mongoclient)
     {
@@ -141,15 +149,20 @@ app.get('/api/:id',function(req,res)
 //PUT by ID
 app.put('/api/:id',function(req,res)
 {
-    var dados = req.body;
-
     db.open(function(err, mongoclient)
     {
         mongoclient.collection('postagens', function(err,collection)
         {
-           collection.update({_id: objectId(req.params.id)},
-                                {$set: {titulo: req.body.titulo}},
-                                {},
+           collection.updateOne(
+                {_id: objectId(req.params.id)},
+                {$push: {
+                            comentarios:{
+                                id_comentario: new objectId(),
+                                comentario: req.body.comentario
+                            }
+                        }
+                },
+                {},
                 function(err, records)
                 {
                 if(err)
